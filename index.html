@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CCNA 2 - Módulo 10: Conceptos de Seguridad de LAN</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cyber: {
+              black: '#020408',
+              card: '#0a101d',
+              cardBorder: '#1e293b',
+              accent: '#10b981', // Emerald
+              accentGlow: 'rgba(16, 185, 129, 0.35)',
+              blue: '#3b82f6',
+              purple: '#8b5cf6',
+              danger: '#ef4444',
+              warning: '#f59e0b'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #020408;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 6px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+
+    .glass-panel {
+      background: rgba(10, 16, 29, 0.98);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .neon-border {
+      box-shadow: 0 0 30px rgba(16, 185, 129, 0.35);
+    }
+
+    /* Animation Classes */
+    .slide-enter {
+      animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(15px) scale(0.99);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .pulse-danger {
+      animation: pulseRed 2s infinite;
+    }
+    @keyframes pulseRed {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      50% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
+    }
+  </style>
+</head>
+
+<body class="bg-cyber-black text-slate-100 font-sans h-full flex flex-col overflow-hidden antialiased select-none">
+
+  <!-- TOP BAR / HEADER -->
+  <header class="h-20 bg-slate-900 border-b border-slate-800 px-8 md:px-12 flex items-center justify-between z-30 shrink-0 shadow-xl">
+    <div class="flex items-center space-x-4">
+      <div class="w-12 h-12 rounded-2xl bg-cyber-accent/10 border border-cyber-accent/50 flex items-center justify-center text-cyber-accent font-bold text-3xl shadow-lg">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <div>
+        <h1 class="text-xs md:text-sm font-bold text-slate-400 tracking-wider">CCNA 2: MÓDULO 10</h1>
+        <p class="text-lg text-cyber-accent font-mono font-extrabold">Conceptos de Seguridad de LAN</p>
+      </div>
+    </div>
+
+    <!-- SPEAKER INDICATOR & PROGRESS -->
+    <div class="hidden md:flex items-center space-x-10">
+      <div id="speakerBadge" class="flex items-center space-x-3 px-5 py-2.5 rounded-full bg-slate-800 border border-slate-700 text-base font-semibold shadow-lg">
+        <span class="w-3.5 h-3.5 rounded-full bg-cyber-accent animate-ping"></span>
+        <span class="text-slate-400">Expositor:</span>
+        <span id="speakerName" class="text-cyber-accent font-mono font-bold text-base">Cargando...</span>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <span class="text-sm font-mono text-slate-400 font-semibold" id="slideCounter">1 / 22</span>
+        <div class="w-48 bg-slate-800 h-3.5 rounded-full overflow-hidden border border-slate-700 shadow-inner">
+          <div id="progressBar" class="bg-gradient-to-r from-emerald-500 to-cyan-400 h-full w-0 transition-all duration-300"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UTILITIES BUTTONS -->
+    <div class="flex items-center space-x-4">
+      <select id="slideSelect" class="bg-slate-800 text-sm md:text-base font-mono border border-slate-700 text-slate-200 rounded-2xl px-4 py-3 focus:outline-none focus:border-cyber-accent max-w-[180px] sm:max-w-[280px] shadow-lg cursor-pointer">
+        <!-- Populated via JS -->
+      </select>
+
+      <button id="fullscreenBtn" title="Pantalla Completa" class="p-3 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl transition-colors shadow-lg">
+        <i class="fa-solid fa-expand text-lg"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN PRESENTATION AREA -->
+  <main class="flex-1 relative overflow-hidden flex items-center justify-center p-6 sm:p-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-cyber-black to-cyber-black">
+
+    <!-- Ambient Grid Effect -->
+    <div class="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-[size:4.5rem_4.5rem] pointer-events-none"></div>
+
+    <!-- SLIDE CONTAINER FRAME -->
+    <div id="slideContainer" class="w-full max-w-[96rem] h-full max-h-[91vh] glass-panel rounded-3xl p-8 sm:p-12 flex flex-col justify-between overflow-y-auto relative z-10 shadow-2xl border border-slate-700/80 slide-enter">
+      <!-- Content injected via JS -->
+    </div>
+
+  </main>
+
+  <!-- BOTTOM NAVIGATION BAR -->
+  <footer class="h-20 bg-slate-900 border-t border-slate-800 px-8 md:px-12 flex items-center justify-between z-30 shrink-0 shadow-2xl">
+    <button id="prevBtn" class="flex items-center space-x-3 px-7 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-extrabold text-base border border-slate-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg">
+      <i class="fa-solid fa-arrow-left text-lg"></i>
+      <span class="hidden sm:inline">Anterior</span>
+    </button>
+
+    <div class="md:hidden text-sm font-mono bg-slate-800 px-5 py-2 rounded-full border border-slate-700">
+      <span id="mobileSpeakerName" class="text-cyber-accent font-bold">Integrante</span>
+    </div>
+
+    <div class="flex items-center space-x-4">
+      <button id="nextBtn" class="flex items-center space-x-3 px-9 py-3.5 rounded-2xl bg-cyber-accent hover:bg-emerald-400 text-slate-950 font-black text-base shadow-2xl shadow-cyber-accentGlow transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+        <span class="hidden sm:inline">Siguiente</span>
+        <i class="fa-solid fa-arrow-right text-lg"></i>
+      </button>
+    </div>
+  </footer>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    const slides = [
+      // 1. Portada
+      {
+        title: "Conceptos de Seguridad de LAN",
+        subTitle: "CCNA 2 - Módulo 10 | Cisco Networking Academy",
+        speaker: "Todos los Integrantes",
+        type: "cover",
+        content: `
+          <div class="text-center py-8 flex flex-col items-center justify-center h-full space-y-10">
+            <div class="inline-flex items-center space-x-3 px-8 py-3 rounded-full bg-cyber-accent/10 border border-cyber-accent/40 text-cyber-accent font-mono text-sm md:text-base shadow-2xl">
+              <i class="fa-solid fa-shield-halved text-xl"></i>
+              <span>EXPOSICIÓN TÉCNICA - EDICIÓN PANTALLA GIGANTE</span>
+            </div>
+            <h1 class="text-5xl sm:text-7xl font-black text-white tracking-tight leading-tight">
+              Módulo 10: <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">Conceptos de Seguridad de LAN</span>
+            </h1>
+            <p class="text-slate-300 max-w-5xl text-lg sm:text-2xl leading-relaxed font-semibold">
+              Aprende a blindar la red interna de una organización frente a intrusos y ataques informáticos con explicaciones sencillas y diagramas claros.
+            </p>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 w-full max-w-6xl pt-6">
+              <div class="bg-slate-800/95 p-6 rounded-3xl border border-slate-700 text-center shadow-2xl">
+                <p class="text-xs text-slate-400 font-mono mb-2">INTEGRANTE 1</p>
+                <p class="font-extrabold text-emerald-400 text-xl">Miguel España</p>
+                <p class="text-sm text-slate-300 mt-2">Fundamentos & Dispositivos</p>
+              </div>
+              <div class="bg-slate-800/95 p-6 rounded-3xl border border-slate-700 text-center shadow-2xl">
+                <p class="text-xs text-slate-400 font-mono mb-2">INTEGRANTE 2</p>
+                <p class="font-extrabold text-blue-400 text-xl">Lorenzo González</p>
+                <p class="text-sm text-slate-300 mt-2">AAA y Estándar 802.1X</p>
+              </div>
+              <div class="bg-slate-800/95 p-6 rounded-3xl border border-slate-700 text-center shadow-2xl">
+                <p class="text-xs text-slate-400 font-mono mb-2">INTEGRANTE 3</p>
+                <p class="font-extrabold text-purple-400 text-xl">Santiago Ocampo</p>
+                <p class="text-sm text-slate-300 mt-2">Vulnerabilidades y Tabla CAM</p>
+              </div>
+              <div class="bg-slate-800/95 p-6 rounded-3xl border border-slate-700 text-center shadow-2xl">
+                <p class="text-xs text-slate-400 font-mono mb-2">INTEGRANTE 4</p>
+                <p class="font-extrabold text-amber-400 text-xl">Sebastián</p>
+                <p class="text-sm text-slate-300 mt-2">VLAN Hopping, DHCP y ARP</p>
+              </div>
+            </div>
+
+            <div class="pt-6">
+              <button onclick="nextSlide()" class="px-10 py-5 rounded-2xl bg-cyber-accent hover:bg-emerald-400 text-slate-950 font-black text-lg shadow-2xl shadow-cyber-accentGlow transition-all flex items-center space-x-4 mx-auto">
+                <span>Iniciar Presentación</span>
+                <i class="fa-solid fa-play text-base"></i>
+              </button>
+            </div>
+          </div>
+        `
+      },
+
+      // 2. Introducción al Módulo 10
+      {
+        title: "10.0 - ¿Por qué cuidar la Red Local (Capa 2)?",
+        subTitle: "La gran vulnerabilidad en los cimientos de la red de la oficina",
+        speaker: "Miguel España",
+        content: `
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-8 h-full items-center">
+            <div class="bg-amber-500/10 border border-amber-500/30 p-8 rounded-3xl flex flex-col justify-center space-y-5 md:col-span-5 h-full shadow-2xl">
+              <div class="flex items-center space-x-4">
+                <i class="fa-solid fa-building-user text-amber-400 text-4xl"></i>
+                <h4 class="font-extrabold text-amber-400 text-xl">Analogía del Edificio Corporativo</h4>
+              </div>
+              <p class="text-base sm:text-lg text-slate-200 leading-relaxed font-medium">
+                Una empresa gasta mucho dinero en un fuerte muro cortafuegos (Firewall) en la entrada principal frente a internet. Sin embargo, si un intruso entra a la cafetería y conecta un cable de red de forma directa a una toma de la pared, tendrá acceso libre a todas las computadoras internas sin que nadie le pida carné ni contraseñas.
+              </p>
+              <div class="p-4 bg-amber-500/15 border border-amber-500/30 rounded-2xl text-sm text-amber-300 font-bold">
+                ⚠️ ¡Exactamente este mismo peligro ocurre en las redes de área local que no tienen seguridad en la Capa 2!
+              </div>
+            </div>
+
+            <div class="grid grid-rows-2 gap-6 md:col-span-7 h-full">
+              <div class="bg-slate-800/95 p-7 rounded-3xl border border-slate-700 flex flex-col justify-center shadow-2xl">
+                <h3 class="text-emerald-400 font-extrabold text-xl mb-3 flex items-center space-x-3">
+                  <i class="fa-solid fa-triangle-exclamation text-2xl"></i><span>El problema histórico de Ethernet</span>
+                </h3>
+                <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                  Las redes Ethernet se crearon hace muchos años buscando únicamente la máxima velocidad y simplicidad, <strong>asumiendo con total confianza que todos los aparatos conectados por cable eran amigos</strong>. No existían formas de verificar quién conectaba un cable.
+                </p>
+              </div>
+
+              <div class="bg-slate-800/95 p-7 rounded-3xl border border-slate-700 flex flex-col justify-center shadow-2xl">
+                <h3 class="text-blue-400 font-extrabold text-xl mb-3 flex items-center space-x-3">
+                  <i class="fa-solid fa-shield-check text-2xl"></i><span>¿Qué resolveremos en este módulo?</span>
+                </h3>
+                <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                  Aprenderemos a instalar filtros inteligentes y sistemas de identidad en los switches para impedir que cualquier persona extraña espíe o robe la información de la empresa.
+                </p>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 3. 10.1.1 Ataques de Red Actuales
+      {
+        title: "10.1.1 - ¿Qué amenazas enfrentamos hoy?",
+        subTitle: "Riesgos informáticos modernos que ponen en peligro los equipos",
+        speaker: "Miguel España",
+        content: `
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8 h-full items-stretch">
+            <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 flex flex-col justify-between shadow-2xl">
+              <div>
+                <div class="w-16 h-16 rounded-2xl bg-red-500/20 text-red-400 flex items-center justify-center mb-6 text-3xl shadow">
+                  <i class="fa-solid fa-skull-crossbones"></i>
+                </div>
+                <h3 class="font-black text-white text-xl mb-4">Ransomware & Malware</h3>
+                <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                  Virus muy destructivos que entran a las computadoras, cifran todos los archivos de trabajo y bases de datos, y exigen dinero en criptomonedas para devolver el acceso.
+                </p>
+              </div>
+              <div class="mt-6 bg-slate-900 p-5 rounded-2xl border border-slate-700 text-sm text-slate-300 leading-relaxed font-medium">
+                📌 <strong>Ejemplo real:</strong> Un empleado conecta una memoria USB desconocida que halló en el pasillo.
+              </div>
+            </div>
+
+            <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 flex flex-col justify-between shadow-2xl">
+              <div>
+                <div class="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-6 text-3xl shadow">
+                  <i class="fa-solid fa-user-ninja"></i>
+                </div>
+                <h3 class="font-black text-white text-xl mb-4">Ataques Silenciosos (APT)</h3>
+                <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                  Invasiones prolongadas y ocultas organizadas por piratas informáticos expertos cuyo único objetivo es robar secretos industriales o proyectos clave de la compañía.
+                </p>
+              </div>
+              <div class="mt-6 bg-slate-900 p-5 rounded-2xl border border-slate-700 text-sm text-slate-300 leading-relaxed font-medium">
+                📌 <strong>Ejemplo real:</strong> Correos falsos muy engañosos dirigidos al gerente de finanzas.
+              </div>
+            </div>
+
+            <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 flex flex-col justify-between shadow-2xl">
+              <div>
+                <div class="w-16 h-16 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center mb-6 text-3xl shadow">
+                  <i class="fa-solid fa-laptop-code"></i>
+                </div>
+                <h3 class="font-black text-white text-xl mb-4">Equipos Desactualizados</h3>
+                <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                  Las computadoras y portátiles de la oficina se vuelven el punto más frágil si los encargados de sistemas olvidan instalarles las actualizaciones de seguridad más recientes.
+                </p>
+              </div>
+              <div class="mt-6 bg-slate-900 p-5 rounded-2xl border border-slate-700 text-sm text-slate-300 leading-relaxed font-medium">
+                📌 <strong>Ejemplo real:</strong> Usar programas viejos con fallas de fábrica que ya tienen parches oficiales.
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 4. 10.1.2 Dispositivos de Seguridad de Red
+      {
+        title: "10.1.2 - Dispositivos de Seguridad de Red",
+        subTitle: "Herramientas especializadas para proteger la infraestructura",
+        speaker: "Miguel España",
+        content: `
+          <div class="space-y-8 h-full flex flex-col justify-center">
+            <p class="text-base sm:text-lg text-slate-300 text-center max-w-5xl mx-auto leading-relaxed font-medium">
+              Para detener las amenazas antes de que lleguen a los servidores principales, las empresas instalan aparatos de alta tecnología en puntos estratégicos de la red:
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 text-center shadow-2xl">
+                <div class="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-3xl flex items-center justify-center mx-auto mb-6 text-4xl shadow">
+                  <i class="fa-solid fa-fire-burner"></i>
+                </div>
+                <h4 class="font-black text-white text-lg sm:text-xl">Firewall Avanzado (NGFW)</h4>
+                <p class="text-sm sm:text-base text-slate-300 mt-4 leading-relaxed font-medium">
+                  Revisa detalladamente cada paquete de datos que entra y sale, bloquea páginas peligrosas y controla qué aplicaciones de internet se permiten usar.
+                </p>
+              </div>
+
+              <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 text-center shadow-2xl">
+                <div class="w-20 h-20 bg-blue-500/20 text-blue-400 rounded-3xl flex items-center justify-center mx-auto mb-6 text-4xl shadow">
+                  <i class="fa-solid fa-shield-cat"></i>
+                </div>
+                <h4 class="font-black text-white text-lg sm:text-xl">Sensores de Alerta (IDS / IPS)</h4>
+                <p class="text-sm sm:text-base text-slate-300 mt-4 leading-relaxed font-medium">
+                  <strong>IDS:</strong> Detecta ataques y avisa al técnico.<br>
+                  <strong>IPS:</strong> Bloquea y frena el ataque de forma automática en plena ejecución.
+                </p>
+              </div>
+
+              <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 text-center shadow-2xl">
+                <div class="w-20 h-20 bg-purple-500/20 text-purple-400 rounded-3xl flex items-center justify-center mx-auto mb-6 text-4xl shadow">
+                  <i class="fa-solid fa-key"></i>
+                </div>
+                <h4 class="font-black text-white text-lg sm:text-xl">Servidores de Admisión (NAC)</h4>
+                <p class="text-sm sm:text-base text-slate-300 mt-4 leading-relaxed font-medium">
+                  Verifican la salud y limpieza de las computadoras antes de permitirles conectarse a la red corporativa.
+                </p>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 5. 10.1.3 Protección de Puntos Terminales
+      {
+        title: "10.1.3 - Protección de Puntos Terminales (Endpoints)",
+        subTitle: "Cuidando cada computadora y portátil de la oficina",
+        speaker: "Miguel España",
+        content: `
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-8 h-full items-center">
+            <div class="space-y-5 md:col-span-6">
+              <div class="bg-slate-800/95 p-6 rounded-3xl border border-slate-700 flex items-center space-x-5 shadow-2xl">
+                <div class="p-4 bg-emerald-500/20 text-emerald-400 rounded-2xl text-3xl"><i class="fa-solid fa-virus-slash"></i></div>
+                <div>
+                  <h4 class="font-extrabold text-white text-base sm:text-lg">Antivirus Tradicional</h4>
+                  <p class="text-sm text-slate-300 mt-1 font-medium">Busca archivos infectados comparándolos con listas mundiales de virus conocidos.</p>
+                </div>
+              </div>
+
+              <div class="bg-slate-800/95 p-6 rounded-3xl border border-slate-700 flex items-center space-x-5 shadow-2xl">
+                <div class="p-4 bg-blue-500/20 text-blue-400 rounded-2xl text-3xl"><i class="fa-solid fa-brain"></i></div>
+                <div>
+                  <h4 class="font-extrabold text-white text-base sm:text-lg">EDR (Inteligencia contra Anomalías)</h4>
+                  <p class="text-sm text-slate-300 mt-1 font-medium">Analiza el comportamiento de los programas en tiempo real para bloquear virus nuevos.</p>
+                </div>
+              </div>
+
+              <div class="bg-slate-800/95 p-6 rounded-3xl border border-slate-700 flex items-center space-x-5 shadow-2xl">
+                <div class="p-4 bg-purple-500/20 text-purple-400 rounded-2xl text-3xl"><i class="fa-solid fa-rotate"></i></div>
+                <div>
+                  <h4 class="font-extrabold text-white text-base sm:text-lg">Actualización de Parches</h4>
+                  <p class="text-sm text-slate-300 mt-1 font-medium">Instala mejoras automáticas para cerrar fallas de seguridad del sistema operativo.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-cyber-card p-8 rounded-3xl border border-cyber-accent/40 flex flex-col justify-center space-y-5 md:col-span-6 h-full shadow-2xl">
+              <span class="text-xs sm:text-sm text-cyber-accent font-mono uppercase tracking-wider font-extrabold">💡 EJEMPLO PARA ENTENDERLO FÁCIL</span>
+              <h4 class="font-black text-white text-xl">¿Por qué importa actualizar los equipos?</h4>
+              <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                Imagina que tienes una casa con una puerta cuya cerradura tiene un defecto publicado en internet. Si decides no llamar al cerrajero a cambiar el repuesto, cualquier ladrón podrá entrar fácilmente. En una empresa, descuidar las actualizaciones de las computadoras es exactamente lo mismo.
+              </p>
+              <div class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-sm text-emerald-400 font-bold">
+                ✔ Solución de los expertos: Automatizar las actualizaciones para toda la compañía.
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 6. 10.1.4 Cisco ESA
+      {
+        title: "10.1.4 - Cisco ESA (Email Security Appliance)",
+        subTitle: "El filtro inteligente de correos electrónicos corporativos",
+        speaker: "Miguel España",
+        content: `
+          <div class="space-y-8 h-full flex flex-col justify-center">
+            <div class="flex items-center space-x-6 bg-slate-800/95 p-8 rounded-3xl border border-slate-700 shadow-2xl">
+              <i class="fa-solid fa-envelope-shield text-5xl text-emerald-400 shrink-0"></i>
+              <p class="text-base sm:text-lg text-slate-200 leading-relaxed font-medium">
+                El equipo <strong>Cisco ESA</strong> funciona como un cartero sumamente desconfiado y profesional que abre, analiza y revisa cada mensaje de correo electrónico que llega a la empresa antes de dejar que los empleados lo abran en sus bandejas.
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div class="bg-slate-900/95 p-8 rounded-3xl border border-slate-800 text-center shadow-xl">
+                <span class="text-emerald-400 font-black text-lg">1. Bloqueo de Phishing</span>
+                <p class="text-sm sm:text-base text-slate-400 mt-4 leading-relaxed font-medium">Examina enlaces falsos para impedir que los trabajadores caigan en trampas bancarias.</p>
+              </div>
+              <div class="bg-slate-900/95 p-8 rounded-3xl border border-slate-800 text-center shadow-xl">
+                <span class="text-blue-400 font-black text-lg">2. Filtro Anti-Spam</span>
+                <p class="text-sm sm:text-base text-slate-400 mt-4 leading-relaxed font-medium">Elimina automáticamente más del 99% de la publicidad engañosa y correos basura masivos.</p>
+              </div>
+              <div class="bg-slate-900/95 p-8 rounded-3xl border border-slate-800 text-center shadow-xl">
+                <span class="text-purple-400 font-black text-lg">3. Cifrado de Mensajes</span>
+                <p class="text-sm sm:text-base text-slate-400 mt-4 leading-relaxed font-medium">Asegura que los documentos financieros confidenciales viajen protegidos con claves secretas.</p>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 7. 10.1.5 Cisco WSA
+      {
+        title: "10.1.5 - Cisco WSA (Web Security Appliance)",
+        subTitle: "Protección avanzada y control de navegación en internet",
+        speaker: "Miguel España",
+        content: `
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-8 h-full items-center">
+            <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 space-y-5 md:col-span-6 shadow-2xl">
+              <h3 class="font-black text-cyan-400 text-xl flex items-center space-x-3">
+                <i class="fa-solid fa-globe text-3xl"></i><span>¿Qué hace el Cisco WSA?</span>
+              </h3>
+              <ul class="text-base sm:text-lg text-slate-300 space-y-4 list-disc list-inside leading-relaxed font-medium">
+                <li>Filtra sitios web por categorías (bloquea páginas de apuestas, virus o contenido prohibido).</li>
+                <li>Examina todas las descargas de internet buscando programas ejecutables peligrosos.</li>
+                <li>Controla el uso de páginas web (permite redes sociales de trabajo pero bloquea juegos en horario laboral).</li>
+              </ul>
+            </div>
+
+            <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 flex flex-col justify-between md:col-span-6 shadow-2xl h-full">
+              <div>
+                <span class="text-xs sm:text-sm font-mono text-emerald-400 uppercase tracking-wider font-extrabold">ANALOGÍA COTIDIANA</span>
+                <h4 class="font-black text-white text-xl mt-2">El Inspector de la Aduana de Internet</h4>
+                <p class="text-base sm:text-lg text-slate-300 mt-4 leading-relaxed font-medium">
+                  Cuando una computadora quiere entrar a una página web, el Cisco WSA revisa primero el contenido para asegurarse de que no traiga ningún virus escondido. Si detecta peligro, corta la conexión al instante.
+                </p>
+              </div>
+
+              <div class="mt-6 bg-slate-900 p-5 rounded-2xl border border-slate-700 text-sm sm:text-base text-slate-300 leading-relaxed font-medium">
+                <strong>Resumen Clave:</strong><br>
+                • <strong>Cisco ESA:</strong> Protege el <u>Correo Electrónico</u>.<br>
+                • <strong>Cisco WSA:</strong> Protege la <u>Navegación Web</u>.
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 8. Actividad Dinámica #1
+      {
+        title: "🕹️ Actividad Dinámica #1: Reto con el Público",
+        subTitle: "Averigua si el auditorio prestó atención a los dispositivos",
+        speaker: "Miguel España",
+        type: "game1",
+        content: `
+          <div id="game1Container" class="space-y-8 h-full flex flex-col justify-center">
+            <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 text-center space-y-5 shadow-2xl">
+              <span class="px-6 py-2.5 bg-amber-500/20 text-amber-400 text-sm font-mono rounded-full font-bold">CASO PRÁCTICO PARA DEBATIR</span>
+              <p class="text-lg sm:text-xl font-bold text-white max-w-5xl mx-auto leading-relaxed">
+                "Un empleado hace clic en un enlace dudoso para descargar una factura, pero la página web intenta descargar en secreto un virus ejecutable (.exe) a su computadora."
+              </p>
+              <p class="text-base sm:text-lg text-emerald-400 font-extrabold">Pregúntale a alguien del público: ¿Qué dispositivo Cisco detiene esta amenaza en la navegación web?</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <button onclick="checkGame1('ESA')" class="p-6 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl text-center text-sm sm:text-base font-extrabold text-slate-200 transition-all shadow-xl">
+                A) Cisco ESA (Correo)
+              </button>
+              <button onclick="checkGame1('WSA')" class="p-6 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl text-center text-sm sm:text-base font-extrabold text-slate-200 transition-all shadow-xl">
+                B) Cisco WSA (Web)
+              </button>
+              <button onclick="checkGame1('LOCAL')" class="p-6 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl text-center text-sm sm:text-base font-extrabold text-slate-200 transition-all shadow-xl">
+                C) Contraseña Local
+              </button>
+            </div>
+
+            <div id="game1Feedback" class="hidden p-6 rounded-2xl text-sm sm:text-base font-bold text-center leading-relaxed shadow-2xl"></div>
+          </div>
+        `
+      },
+
+      // 9. 10.2.1 y 10.2.2 Control de Acceso y AAA
+      {
+        title: "10.2.1 & 10.2.2 - Control de Acceso y Marco AAA",
+        subTitle: "Administración centralizada de identidades para switches",
+        speaker: "Lorenzo González",
+        content: `
+          <div class="space-y-8 h-full flex flex-col justify-center">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div class="bg-slate-800/95 p-7 rounded-3xl border border-slate-700 shadow-2xl">
+                <h4 class="font-black text-red-400 text-lg mb-3">❌ Autenticación Local (Un caos operativo)</h4>
+                <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                  Guardar contraseñas de administrador en cada switch o router por separado. Si un empleado se va de la empresa, hay que borrar su usuario en 50 equipos uno por uno manualmente.
+                </p>
+              </div>
+
+              <div class="bg-slate-800/95 p-7 rounded-3xl border border-slate-700 shadow-2xl">
+                <h4 class="font-black text-emerald-400 text-lg mb-3">✅ Marco AAA Centralizado (Escalable)</h4>
+                <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                  Utiliza un servidor central (como Cisco ISE o TACACS+) donde se guardan todas las llaves. Si alguien cambia su clave, se actualiza una sola vez para toda la compañía.
+                </p>
+              </div>
+            </div>
+
+            <!-- Diagrama AAA Gigante -->
+            <div class="bg-slate-900/95 p-8 rounded-3xl border border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center shadow-2xl">
+              <div class="bg-slate-800/90 p-7 rounded-2xl border border-slate-700 shadow">
+                <span class="text-2xl sm:text-3xl font-black text-emerald-400 font-mono">AUTHENTICATION</span>
+                <p class="text-lg text-white font-bold mt-3">Autenticación</p>
+                <p class="text-sm text-slate-400 mt-2 font-medium">¿Quién eres? (Tu usuario y contraseña o huella).</p>
+              </div>
+              <div class="bg-slate-800/90 p-7 rounded-2xl border border-slate-700 shadow">
+                <span class="text-2xl sm:text-3xl font-black text-blue-400 font-mono">AUTHORIZATION</span>
+                <p class="text-lg text-white font-bold mt-3">Autorización</p>
+                <p class="text-sm text-slate-400 mt-2 font-medium">¿Qué te dejan hacer? (¿Eres técnico o jefe?).</p>
+              </div>
+              <div class="bg-slate-800/90 p-7 rounded-2xl border border-slate-700 shadow">
+                <span class="text-2xl sm:text-3xl font-black text-purple-400 font-mono">ACCOUNTING</span>
+                <p class="text-lg text-white font-bold mt-3">Auditoría / Registro</p>
+                <p class="text-sm text-slate-400 mt-2 font-medium">¿Qué hiciste? (Historial de acciones y comandos).</p>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 10. 10.2.3, 10.2.4, 10.2.5 Profundizando en AAA
+      {
+        title: "10.2.3 - 10.2.5 - AAA en la Práctica Cotidiana",
+        subTitle: "La sencilla analogía del sistema bancario",
+        speaker: "Lorenzo González",
+        content: `
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8 h-full items-stretch">
+            <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 flex flex-col justify-between shadow-2xl">
+              <div>
+                <span class="text-xs sm:text-sm font-mono text-emerald-400 font-black uppercase tracking-wider">PASO 1</span>
+                <h4 class="font-black text-white text-xl mt-2">Autenticación (Tu Clave PIN)</h4>
+                <p class="text-base sm:text-lg text-slate-300 mt-4 leading-relaxed font-medium">
+                  Metes la tarjeta en el cajero automático y digitas tu clave para demostrar que verdaderamente eres tú.
+                </p>
+              </div>
+              <div class="mt-6 bg-slate-900 p-5 rounded-2xl border border-slate-700 text-sm text-slate-300 font-medium">
+                💻 <strong>En Redes:</strong> Poner usuario y contraseña al ingresar por SSH.
+              </div>
+            </div>
+
+            <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 flex flex-col justify-between shadow-2xl">
+              <div>
+                <span class="text-xs sm:text-sm font-mono text-blue-400 font-black uppercase tracking-wider">PASO 2</span>
+                <h4 class="font-black text-white text-xl mt-2">Autorización (Tu Límite)</h4>
+                <p class="text-base sm:text-lg text-slate-300 mt-4 leading-relaxed font-medium">
+                  Puedes retirar dinero de tu cuenta personal, pero el sistema no te dejará vaciar la bóveda del banco porque no tienes ese permiso.
+                </p>
+              </div>
+              <div class="mt-6 bg-slate-900 p-5 rounded-2xl border border-slate-700 text-sm text-slate-300 font-medium">
+                💻 <strong>En Redes:</strong> Técnico ve comandos básicos; el jefe configura todo.
+              </div>
+            </div>
+
+            <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 flex flex-col justify-between shadow-2xl">
+              <div>
+                <span class="text-xs sm:text-sm font-mono text-purple-400 font-black uppercase tracking-wider">PASO 3</span>
+                <h4 class="font-black text-white text-xl mt-2">Auditoría (El Extracto)</h4>
+                <p class="text-base sm:text-lg text-slate-300 mt-4 leading-relaxed font-medium">
+                  El banco anota con hora y fecha exacta cada retiro, compra o transacción que realizaste en el cajero.
+                </p>
+              </div>
+              <div class="mt-6 bg-slate-900 p-5 rounded-2xl border border-slate-700 text-sm text-slate-300 font-medium">
+                💻 <strong>En Redes:</strong> Registro de logs: "Usuario X borró la VLAN a las 3 PM".
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 11. 10.2.6 Estándar IEEE 802.1X
+      {
+        title: "10.2.6 - Estándar IEEE 802.1X",
+        subTitle: "El guardia de seguridad en el puerto físico del switch",
+        speaker: "Lorenzo González",
+        content: `
+          <div class="space-y-8 h-full flex flex-col justify-center">
+            <p class="text-base sm:text-lg text-slate-300 text-center max-w-5xl mx-auto leading-relaxed font-semibold">
+              <strong>802.1X</strong> actúa como un guardia de seguridad estricto en cada toma de red de la pared. Evita que un extra llegue con un portátil y obtenga internet conectando un cable de forma libre.
+            </p>
+
+            <div class="bg-slate-900/95 p-8 rounded-3xl border border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-8 text-center shadow-2xl">
+              <div class="bg-slate-800/90 p-7 rounded-2xl border border-slate-700 shadow">
+                <i class="fa-solid fa-laptop text-emerald-400 text-5xl mb-4"></i>
+                <h4 class="font-black text-lg text-white">1. Suplicante (Cliente)</h4>
+                <p class="text-sm sm:text-base text-slate-400 mt-3 font-medium">La laptop del empleado que pide conectarse a la red.</p>
+              </div>
+
+              <div class="bg-slate-800/90 p-7 rounded-2xl border border-slate-700 shadow">
+                <i class="fa-solid fa-network-wired text-blue-400 text-5xl mb-4"></i>
+                <h4 class="font-black text-lg text-white">2. Autenticador (Switch)</h4>
+                <p class="text-sm sm:text-base text-slate-400 mt-3 font-medium">Mantiene el puerto bloqueado hasta que le den luz verde.</p>
+              </div>
+
+              <div class="bg-slate-800/90 p-7 rounded-2xl border border-slate-700 shadow">
+                <i class="fa-solid fa-server text-purple-400 text-5xl mb-4"></i>
+                <h4 class="font-black text-lg text-white">3. Servidor RADIUS</h4>
+                <p class="text-sm sm:text-base text-slate-400 mt-3 font-medium">Valida la clave del empleado y ordena al switch abrir el puerto.</p>
+              </div>
+            </div>
+
+            <div class="bg-emerald-500/10 border border-emerald-500/30 p-5 rounded-2xl text-sm sm:text-base text-slate-200 text-center font-bold shadow">
+              💡 <strong>Conclusión:</strong> Sin 802.1X cualquiera se conecta por cable; con 802.1X el puerto permanece cerrado hasta autenticarse.
+            </div>
+          </div>
+        `
+      },
+
+      // 12. Actividad Dinámica #2
+      {
+        title: "🕹️ Actividad Dinámica #2: Trivia Interactiva AAA",
+        subTitle: "Comprueba si el público entendió el rol de cada función",
+        speaker: "Lorenzo González",
+        type: "game2",
+        content: `
+          <div class="space-y-8 h-full flex flex-col justify-center">
+            <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 text-center space-y-5 shadow-2xl">
+              <span class="px-6 py-2.5 bg-blue-500/20 text-blue-400 text-sm font-mono rounded-full font-bold">PREGUNTA DE ANÁLISIS</span>
+              <p class="text-lg sm:text-xl font-bold text-white max-w-5xl mx-auto leading-relaxed">
+                "¿Cuál de los 3 componentes de AAA guarda un registro detallado con la hora, fecha y los comandos exactos ejecutados por un administrador?"
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <button onclick="checkGame2('A1')" class="p-6 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl text-center text-sm sm:text-base font-extrabold text-slate-200 transition-all shadow-xl">
+                Autenticación
+              </button>
+              <button onclick="checkGame2('A2')" class="p-6 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl text-center text-sm sm:text-base font-extrabold text-slate-200 transition-all shadow-xl">
+                Autorización
+              </button>
+              <button onclick="checkGame2('A3')" class="p-6 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl text-center text-sm sm:text-base font-extrabold text-slate-200 transition-all shadow-xl">
+                Auditoría (Accounting)
+              </button>
+            </div>
+
+            <div id="game2Feedback" class="hidden p-6 rounded-2xl text-sm sm:text-base font-bold text-center leading-relaxed shadow-2xl"></div>
+          </div>
+        `
+      },
+
+      // 13. 10.3.1 Vulnerabilidades de Capa 2
+      {
+        title: "10.3.1 - Vulnerabilidades Inherentes de Capa 2",
+        subTitle: "¿Por qué Ethernet confía ciegamente en los dispositivos?",
+        speaker: "Santiago Ocampo",
+        content: `
+          <div class="space-y-8 h-full flex flex-col justify-center">
+            <div class="bg-red-500/10 border border-red-500/30 p-7 rounded-3xl flex items-center space-x-6 shadow-xl">
+              <i class="fa-solid fa-bug text-red-400 text-5xl shrink-0"></i>
+              <p class="text-base sm:text-lg text-slate-200 leading-relaxed font-medium">
+                Los protocolos de Capa 2 (Ethernet, ARP, DHCP) se diseñaron hace décadas priorizando la velocidad masiva, <strong>pero sin seguridad ni cifrado</strong>. No tienen formas nativas para comprobar si quien envía un mensaje es quien dice ser.
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 shadow-2xl">
+                <h4 class="font-black text-white text-lg mb-4">Supuestos peligrosos de Ethernet:</h4>
+                <ul class="text-sm sm:text-base text-slate-300 space-y-3.5 list-disc list-inside leading-relaxed font-medium">
+                  <li>"Si una trama entra por un puerto, la dirección MAC de origen es legítima".</li>
+                  <li>"Si un equipo responde una consulta ARP, es el dueño real de esa IP".</li>
+                  <li>"Si un aparato ofrece IPs DHCP, es un router autorizado".</li>
+                </ul>
+              </div>
+
+              <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 shadow-2xl">
+                <h4 class="font-black text-amber-400 text-lg mb-4">Impacto Real en la Empresa:</h4>
+                <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                  Un atacante interno puede aprovechar estos vacíos para engañar a los switches, robar datos privados o tumbar la red local sin tocar el Firewall de internet.
+                </p>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 14. 10.3.2 y 10.3.3 Categorías de Ataques y Mitigación
+      {
+        title: "10.3.2 & 10.3.3 - Categorías de Ataques y Mitigación",
+        subTitle: "Defensas principales que se instalan en los switches Cisco",
+        speaker: "Santiago Ocampo",
+        content: `
+          <div class="space-y-8 h-full flex flex-col justify-center">
+            <p class="text-base sm:text-lg text-slate-300 text-center max-w-5xl mx-auto leading-relaxed font-medium">
+              Para contrarrestar cada tipo de ataque en la Capa 2, Cisco creó herramientas de defensa específicas que se configuran directamente en los switches:
+            </p>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+              <div class="bg-slate-800/95 p-7 rounded-3xl border border-slate-700 shadow-2xl">
+                <p class="text-xs text-red-400 font-mono font-bold mb-1">ATAQUE MAC</p>
+                <p class="text-base sm:text-lg font-black text-white">MAC Flooding</p>
+                <span class="inline-block mt-5 px-4 py-2 bg-emerald-500/20 text-emerald-400 text-xs sm:text-sm rounded-xl font-extrabold">Port Security</span>
+              </div>
+
+              <div class="bg-slate-800/95 p-7 rounded-3xl border border-slate-700 shadow-2xl">
+                <p class="text-xs text-red-400 font-mono font-bold mb-1">ATAQUE DHCP</p>
+                <p class="text-base sm:text-lg font-black text-white">DHCP Spoofing</p>
+                <span class="inline-block mt-5 px-4 py-2 bg-emerald-500/20 text-emerald-400 text-xs sm:text-sm rounded-xl font-extrabold">DHCP Snooping</span>
+              </div>
+
+              <div class="bg-slate-800/95 p-7 rounded-3xl border border-slate-700 shadow-2xl">
+                <p class="text-xs text-red-400 font-mono font-bold mb-1">ATAQUE ARP</p>
+                <p class="text-base sm:text-lg font-black text-white">ARP Poisoning</p>
+                <span class="inline-block mt-5 px-4 py-2 bg-emerald-500/20 text-emerald-400 text-xs sm:text-sm rounded-xl font-extrabold">DAI (Inspection)</span>
+              </div>
+
+              <div class="bg-slate-800/95 p-7 rounded-3xl border border-slate-700 shadow-2xl">
+                <p class="text-xs text-red-400 font-mono font-bold mb-1">ATAQUE STP</p>
+                <p class="text-base sm:text-lg font-black text-white">Root Spoof</p>
+                <span class="inline-block mt-5 px-4 py-2 bg-emerald-500/20 text-emerald-400 text-xs sm:text-sm rounded-xl font-extrabold">BPDU Guard</span>
+              </div>
+            </div>
+
+            <p class="text-sm text-slate-400 text-center font-mono">
+              (Todas estas tecnologías se estudian y configuran a fondo en el Módulo 11).
+            </p>
+          </div>
+        `
+      },
+
+      // 15. 10.4 MAC Address Table Attacks
+      {
+        title: "10.4 - Ataque a Tablas de Direcciones MAC",
+        subTitle: "Desbordamiento de Memoria CAM (MAC Flooding)",
+        speaker: "Santiago Ocampo",
+        content: `
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-8 h-full items-center">
+            <div class="space-y-5 md:col-span-6">
+              <h4 class="font-black text-red-400 text-xl">¿Cómo opera el MAC Flooding?</h4>
+              <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                La tabla CAM del switch guarda las direcciones MAC y los puertos conectados. Esta tabla tiene un tamaño limitado (por ejemplo, 8,000 registros).
+              </p>
+              <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                Un atacante ejecuta un programa (como <strong>macof</strong>) que inyecta miles de direcciones MAC falsas por segundo hasta saturar la memoria.
+              </p>
+              <div class="p-5 bg-slate-900 rounded-2xl border border-slate-800 text-sm text-slate-300 leading-relaxed font-medium">
+                ⚠️ <strong>Modo Fail-Open:</strong> Al llenarse la memoria CAM, el switch colapsa y comienza a reenviar todo el tráfico confidencial por <u>todos los puertos</u>, perdiendo su privacidad.
+              </div>
+            </div>
+
+            <div class="bg-slate-900 p-8 rounded-3xl border border-slate-800 flex flex-col justify-center items-center text-center shadow-2xl md:col-span-6 h-full">
+              <i class="fa-solid fa-network-wired text-7xl text-red-500 mb-6 animate-bounce"></i>
+              <h5 class="font-black text-white text-lg">Inundación con 'macof'</h5>
+              <p class="text-sm sm:text-base text-slate-400 mt-3 leading-relaxed font-medium">
+                Genera más de 150,000 MACs falsas por minuto.<br>
+                El atacante intercepta contraseñas en texto plano usando Wireshark.
+              </p>
+            </div>
+          </div>
+        `
+      },
+
+      // 16. Simulación Interactiva - Tabla MAC
+      {
+        title: "🕹️ Simulador Interactivo: Desbordamiento Tabla MAC",
+        subTitle: "Prueba el ataque en vivo para ver el colapso del switch",
+        speaker: "Santiago Ocampo",
+        type: "macSim",
+        content: `
+          <div class="space-y-8 h-full flex flex-col justify-center">
+            <div class="flex items-center justify-between bg-slate-800/95 p-6 rounded-3xl border border-slate-700 shadow-2xl">
+              <div>
+                <span class="text-sm font-mono text-slate-400 font-bold">Estado de Memoria CAM:</span>
+                <span id="macCount" class="text-base sm:text-lg font-black text-emerald-400 font-mono ml-2">2 / 5 Registros</span>
+              </div>
+              <button onclick="addMacAddress()" class="px-6 py-3 bg-red-500 hover:bg-red-600 text-white text-sm sm:text-base font-black rounded-2xl shadow-xl transition-all flex items-center space-x-3">
+                <i class="fa-solid fa-plus-circle"></i> <span>Ejecutar 'macof' (+MAC Falsa)</span>
+              </button>
+            </div>
+
+            <!-- Tabla Visual MAC -->
+            <div class="bg-slate-900/95 rounded-3xl border border-slate-800 overflow-hidden shadow-2xl">
+              <table class="w-full text-left text-sm sm:text-base font-mono">
+                <thead class="bg-slate-800 text-slate-300">
+                  <tr>
+                    <th class="p-5">Puerto</th>
+                    <th class="p-5">Dirección MAC</th>
+                    <th class="p-5">Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="macTableBody">
+                  <tr class="border-b border-slate-800">
+                    <td class="p-5 text-emerald-400 font-bold">Fa0/1</td>
+                    <td class="p-5">0011.A2B3.4401 (Legítimo - PC Gerencia)</td>
+                    <td class="p-5 text-emerald-400 font-bold">OK</td>
+                  </tr>
+                  <tr class="border-b border-slate-800">
+                    <td class="p-5 text-emerald-400 font-bold">Fa0/2</td>
+                    <td class="p-5">0011.A2B3.4402 (Legítimo - Servidor)</td>
+                    <td class="p-5 text-emerald-400 font-bold">OK</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div id="macStatusBox" class="p-5 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-sm sm:text-base text-emerald-400 font-bold text-center shadow">
+              El switch opera en régimen normal de Capa 2 (Conmutación Segura).
+            </div>
+          </div>
+        `
+      },
+
+      // 17. 10.5.1 - 10.5.3 Ataques VLAN Hopping
+      {
+        title: "10.5.1 - 10.5.3 - Ataques de Salto de VLAN (VLAN Hopping)",
+        subTitle: "Saltando las barreras lógicas entre diferentes departamentos",
+        speaker: "Sebastián",
+        content: `
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 h-full items-center">
+            <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 space-y-5 shadow-2xl">
+              <h4 class="font-black text-amber-400 text-xl">1. VLAN Hopping por DTP (Switch Spoofing)</h4>
+              <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                Ocurre cuando los puertos del switch están configurados en modo automático predeterminado (<code class="text-amber-300">Dynamic Auto</code>).
+              </p>
+              <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                El atacante envía tramas simulando ser un switch, engañando al equipo para formar un enlace troncal (Trunk) no autorizado y ver todas las VLANs de la empresa.
+              </p>
+            </div>
+
+            <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 space-y-5 shadow-2xl">
+              <h4 class="font-black text-purple-400 text-xl">2. Double-Tagging (Doble Etiquetado)</h4>
+              <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                El atacante inserta <strong>dos etiquetas 802.1Q</strong> en un mismo paquete Ethernet.
+              </p>
+              <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                El primer switch procesa y borra la etiqueta externa y reenvía el paquete, el cual llega al segundo switch con la etiqueta oculta colándose directo a una VLAN restringida.
+              </p>
+            </div>
+          </div>
+        `
+      },
+
+      // 18. 10.5.4 y 10.5.5 Ataques DHCP
+      {
+        title: "10.5.4 & 10.5.5 - Ataques al Servicio DHCP",
+        subTitle: "Agotamiento de IPs y suplantación de servidores",
+        speaker: "Sebastián",
+        content: `
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 h-full items-center">
+            <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 space-y-5 shadow-2xl">
+              <div class="flex items-center space-x-4 text-red-400">
+                <i class="fa-solid fa-battery-empty text-4xl"></i>
+                <h4 class="font-black text-xl text-white">DHCP Starvation (Agotamiento)</h4>
+              </div>
+              <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                El atacante usa un programa para pedir miles de direcciones IP con direcciones MAC falsas hasta vaciar por completo el listado disponible del servidor legítimo.
+              </p>
+              <p class="text-sm font-semibold text-slate-400">Consecuencia: Ningún equipo nuevo puede conectarse a la red.</p>
+            </div>
+
+            <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 space-y-5 shadow-2xl">
+              <div class="flex items-center space-x-4 text-amber-400">
+                <i class="fa-solid fa-masks-theater text-4xl"></i>
+                <h4 class="font-black text-xl text-white">DHCP Spoofing (Servidor Falso)</h4>
+              </div>
+              <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                Como el servidor real se quedó sin IPs, el atacante monta un servidor DHCP falso que responde a los clientes asignando:
+              </p>
+              <ul class="text-sm sm:text-base text-slate-300 list-disc list-inside space-y-2 font-medium">
+                <li>Su propia IP como puerta de enlace (Man-in-the-Middle).</li>
+                <li>DNS falsificados para redirigir a páginas maliciosas.</li>
+              </ul>
+            </div>
+          </div>
+        `
+      },
+
+      // 19. 10.5.7 y 10.5.8 Ataques ARP
+      {
+        title: "10.5.7 & 10.5.8 - Ataques ARP & Suplantación",
+        subTitle: "Envenenamiento de Tablas ARP (ARP Poisoning)",
+        speaker: "Sebastián",
+        content: `
+          <div class="space-y-8 h-full flex flex-col justify-center">
+            <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 shadow-2xl">
+              <h4 class="font-black text-cyan-400 text-xl mb-3">Mecánica del Envenenamiento ARP</h4>
+              <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                El protocolo ARP no valida quién responde. El atacante envía mensajes falsos diciendo: 
+                <br><em class="text-amber-300 font-semibold">"Yo soy el router principal de la oficina, envíenme todo su tráfico a mí"</em>.
+              </p>
+            </div>
+
+            <!-- Esquema MITM Gigante -->
+            <div class="bg-slate-900/95 p-8 rounded-3xl border border-slate-800 flex items-center justify-around text-center text-sm sm:text-base shadow-2xl">
+              <div class="p-6 bg-slate-800 rounded-2xl border border-slate-700 shadow">
+                <i class="fa-solid fa-desktop text-emerald-400 text-4xl mb-3"></i>
+                <p class="font-black text-white text-lg">Host Víctima</p>
+              </div>
+              <div class="text-red-400 font-mono font-bold text-sm sm:text-base">
+                Tráfico desviado ➔
+              </div>
+              <div class="p-6 bg-red-950/90 border border-red-800 rounded-2xl shadow">
+                <i class="fa-solid fa-user-ninja text-red-400 text-4xl mb-3"></i>
+                <p class="font-black text-white text-lg">Atacante (MITM)</p>
+              </div>
+              <div class="text-red-400 font-mono font-bold text-sm sm:text-base">
+                ➔ Reenvío disimulado
+              </div>
+              <div class="p-6 bg-slate-800 rounded-2xl border border-slate-700 shadow">
+                <i class="fa-solid fa-router text-blue-400 text-4xl mb-3"></i>
+                <p class="font-black text-white text-lg">Gateway Real</p>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 20. 10.5.9 y 10.5.10 Ataques STP y CDP
+      {
+        title: "10.5.9 & 10.5.10 - Ataques STP y Reconocimiento CDP",
+        subTitle: "Manipulación de BPDUs y fugas de información de topología",
+        speaker: "Sebastián",
+        content: `
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 h-full items-center">
+            <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 space-y-5 shadow-2xl">
+              <h4 class="font-black text-emerald-400 text-xl">Ataques a STP (Spanning Tree)</h4>
+              <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                El atacante inyecta tramas BPDUs falsas con prioridad cero para obligar a la red a declarar su computadora como el nuevo <strong>Root Bridge</strong> principal.
+              </p>
+              <p class="text-sm sm:text-base text-slate-400 leading-relaxed font-medium">
+                Como resultado, todo el tráfico corporativo cambia de ruta y pasa obligatoriamente a través del equipo del atacante.
+              </p>
+            </div>
+
+            <div class="bg-slate-800/95 p-8 rounded-3xl border border-slate-700 space-y-5 shadow-2xl">
+              <h4 class="font-black text-purple-400 text-xl">Reconocimiento mediante CDP</h4>
+              <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-medium">
+                <strong>CDP</strong> emite mensajes en texto plano revelando modelos de equipos, versiones de software e IPs conectadas.
+              </p>
+              <div class="bg-slate-900 p-5 rounded-2xl border border-slate-700 text-sm sm:text-base text-slate-300 font-medium">
+                💡 <strong>Mitigación Recomendada:</strong> Apagar CDP en puertos de usuario con <code class="text-emerald-400">no cdp enable</code>.
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 21. Quiz Final de Repaso (Con explicaciones detalladas)
+      {
+        title: "🕹️ Quiz Final de Repaso General",
+        subTitle: "Evaluando el conocimiento aprendido con explicaciones detalladas",
+        speaker: "Todos los Integrantes",
+        type: "quiz",
+        content: `
+          <div id="quizContainer" class="space-y-6 h-full flex flex-col justify-center">
+            <div id="quizQuestionBox" class="bg-slate-800/95 p-7 rounded-3xl border border-slate-700 text-center shadow-2xl">
+              <span id="quizNum" class="text-sm font-mono text-emerald-400 font-bold">PREGUNTA 1 DE 3</span>
+              <h4 id="quizText" class="text-lg sm:text-xl font-bold text-white mt-2">Cargando pregunta...</h4>
+            </div>
+
+            <div id="quizOptions" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Populated via JS -->
+            </div>
+
+            <div id="quizScoreBox" class="hidden space-y-5 overflow-y-auto max-h-[62vh] pr-2">
+              <!-- Result Banner -->
+              <div class="p-6 bg-cyber-card border border-cyber-accent/50 rounded-3xl text-center space-y-2 shadow-2xl">
+                <h3 class="text-2xl sm:text-3xl font-black text-emerald-400">¡Evaluación Final Completada!</h3>
+                <p id="quizScoreText" class="text-base sm:text-lg text-slate-200 font-bold"></p>
+                <p class="text-xs text-slate-400 font-mono">A continuación se explica el porqué de cada respuesta:</p>
+              </div>
+
+              <!-- Detailed Explanation Cards -->
+              <div id="quizDetailedReview" class="space-y-4">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 22. Conclusión y Resumen Final
+      {
+        title: "10.6 - Conclusión, Resumen & Cierre",
+        subTitle: "Listos para el Módulo 11 (Configuración Práctica)",
+        speaker: "Todos los Integrantes",
+        content: `
+          <div class="text-center space-y-8 py-6 flex flex-col justify-center h-full">
+            <div class="inline-block p-5 bg-emerald-500/10 rounded-full border border-emerald-500/30 text-emerald-400 mx-auto shadow-2xl">
+              <i class="fa-solid fa-flag-checkered text-5xl"></i>
+            </div>
+            <h3 class="text-3xl sm:text-4xl font-black text-white">Resumen General del Módulo 10</h3>
+            <p class="text-base sm:text-lg text-slate-300 max-w-5xl mx-auto leading-relaxed font-medium">
+              La Capa 2 tiene fallas lógicas debido a que no valida identidades por defecto. Para proteger la empresa debemos aplicar de forma conjunta: <strong>802.1X</strong>, <strong>Port Security</strong>, <strong>DHCP Snooping</strong> y <strong>DAI</strong>.
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-6xl mx-auto text-left text-sm sm:text-base">
+              <div class="bg-slate-800/95 p-7 rounded-3xl border border-slate-700 shadow-2xl">
+                <span class="text-emerald-400 font-black text-lg">Pilar Principal:</span>
+                <p class="text-slate-300 mt-3 leading-relaxed font-medium">Nunca confiar ciegamente en los dispositivos conectados por cable físico a la LAN.</p>
+              </div>
+              <div class="bg-slate-800/95 p-7 rounded-3xl border border-slate-700 shadow-2xl">
+                <span class="text-blue-400 font-black text-lg">Siguiente Tema:</span>
+                <p class="text-slate-300 mt-3 leading-relaxed font-medium">Módulo 11: Configuración práctica y comandos de mitigación en equipos Cisco.</p>
+              </div>
+              <div class="bg-slate-800/95 p-7 rounded-3xl border border-slate-700 shadow-2xl">
+                <span class="text-purple-400 font-black text-lg">Espacio de Dudas:</span>
+                <p class="text-slate-300 mt-3 leading-relaxed font-medium">Agradecemos su atención. Quedamos abiertos a preguntas y comentarios.</p>
+              </div>
+            </div>
+
+            <div class="pt-4">
+              <span class="text-sm sm:text-base font-mono text-slate-300 font-bold">¡Muchas gracias por su valiosa participación!</span>
+            </div>
+          </div>
+        `
+      }
+    ];
+
+    // APP STATE
+    let currentSlide = 0;
+
+    // DOM ELEMENTS
+    const slideContainer = document.getElementById('slideContainer');
+    const slideCounter = document.getElementById('slideCounter');
+    const progressBar = document.getElementById('progressBar');
+    const speakerName = document.getElementById('speakerName');
+    const mobileSpeakerName = document.getElementById('mobileSpeakerName');
+    const slideSelect = document.getElementById('slideSelect');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+    function initPresentation() {
+      slideSelect.innerHTML = '';
+      slides.forEach((s, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = `${index + 1}. ${s.title.substring(0, 26)}...`;
+        slideSelect.appendChild(option);
+      });
+      renderSlide(currentSlide);
+    }
+
+    function renderSlide(index) {
+      const slide = slides[index];
+
+      slideCounter.textContent = `${index + 1} / ${slides.length}`;
+      progressBar.style.width = `${((index + 1) / slides.length) * 100}%`;
+      speakerName.textContent = slide.speaker;
+      mobileSpeakerName.textContent = slide.speaker.split(' ')[0];
+      slideSelect.value = index;
+
+      prevBtn.disabled = index === 0;
+      nextBtn.disabled = index === slides.length - 1;
+
+      let html = `
+        <div class="flex flex-col h-full justify-between">
+          <!-- Slide Header -->
+          <div class="mb-6 shrink-0">
+            <div class="flex items-center justify-between">
+              <span class="text-sm sm:text-base font-mono text-cyber-accent uppercase tracking-wider font-extrabold">${slide.subTitle}</span>
+              <span class="text-sm sm:text-base bg-slate-800 border border-slate-700 text-slate-300 px-4 py-1.5 rounded-full font-mono font-bold">${slide.speaker}</span>
+            </div>
+            <h2 class="text-3xl sm:text-5xl font-black text-white mt-3 tracking-tight">${slide.title}</h2>
+          </div>
+
+          <!-- Slide Main Content -->
+          <div class="flex-1 overflow-y-auto pr-2 my-2 flex flex-col justify-center">
+            ${slide.content}
+          </div>
+        </div>
+      `;
+
+      slideContainer.innerHTML = html;
+
+      slideContainer.classList.remove('slide-enter');
+      void slideContainer.offsetWidth;
+      slideContainer.classList.add('slide-enter');
+
+      if (slide.type === 'quiz') {
+        initQuiz();
+      }
+    }
+
+    function nextSlide() {
+      if (currentSlide < slides.length - 1) {
+        currentSlide++;
+        renderSlide(currentSlide);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        renderSlide(currentSlide);
+      }
+    }
+
+    prevBtn.addEventListener('click', prevSlide);
+    nextBtn.addEventListener('click', nextSlide);
+
+    slideSelect.addEventListener('change', (e) => {
+      currentSlide = parseInt(e.target.value);
+      renderSlide(currentSlide);
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        nextSlide();
+      } else if (e.key === 'ArrowLeft') {
+        prevSlide();
+      }
+    });
+
+    fullscreenBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          console.log(`Fullscreen error: ${err.message}`);
+        });
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    });
+
+    // DINÁMICA 1 CON EXPLICACIÓN DETALLADA
+    function checkGame1(choice) {
+      const feedback = document.getElementById('game1Feedback');
+      feedback.classList.remove('hidden', 'bg-red-500/20', 'text-red-400', 'bg-emerald-500/20', 'text-emerald-400');
+      
+      if (choice === 'WSA') {
+        feedback.classList.add('bg-emerald-500/20', 'text-emerald-400');
+        feedback.innerHTML = "✅ ¡EXCELENTE! <strong>Cisco WSA</strong> es el encargado de inspeccionar todo el tráfico web y bloquear descargas peligrosas en tiempo real.<br><br><em>¿Por qué las demás no sirven?</em> El <strong>Cisco ESA</strong> solo revisa correos electrónicos, y una <strong>Contraseña Local</strong> no analiza descargas de internet.";
+      } else if (choice === 'ESA') {
+        feedback.classList.add('bg-red-500/20', 'text-red-400');
+        feedback.innerHTML = "❌ Incorrecto. El <strong>Cisco ESA</strong> protege exclusivamente los correos electrónicos. Como la amenaza viene de una <u>descarga web</u>, la respuesta correcta es el <strong>Cisco WSA</strong>.";
+      } else {
+        feedback.classList.add('bg-red-500/20', 'text-red-400');
+        feedback.innerHTML = "❌ Incorrecto. Una contraseña local no hace filtros en internet. La respuesta correcta es el <strong>Cisco WSA</strong>.";
+      }
+    }
+
+    // DINÁMICA 2 CON EXPLICACIÓN DETALLADA
+    function checkGame2(choice) {
+      const feedback = document.getElementById('game2Feedback');
+      feedback.classList.remove('hidden', 'bg-red-500/20', 'text-red-400', 'bg-emerald-500/20', 'text-emerald-400');
+
+      if (choice === 'A3') {
+        feedback.classList.add('bg-emerald-500/20', 'text-emerald-400');
+        feedback.innerHTML = "✅ ¡CORRECTO! <strong>Auditoría (Accounting)</strong> es el componente de AAA que registra un historial detallado con fecha, hora y los comandos exactos ejecutados.<br><br><em>¿Por qué las otras fallan?</em> La <strong>Autenticación</strong> solo valida quién eres al entrar, y la <strong>Autorización</strong> fija tus permisos, pero ninguna guarda historiales de comandos.";
+      } else if (choice === 'A1') {
+        feedback.classList.add('bg-red-500/20', 'text-red-400');
+        feedback.innerHTML = "❌ Incorrecto. La <strong>Autenticación</strong> solo verifica tu identidad cuando inicias sesión, pero no guarda un registro histórico de tus acciones.";
+      } else {
+        feedback.classList.add('bg-red-500/20', 'text-red-400');
+        feedback.innerHTML = "❌ Incorrecto. La <strong>Autorización</strong> define tus privilegios, pero el registro histórico detallado le corresponde a la <strong>Auditoría</strong>.";
+      }
+    }
+
+    // SIMULADOR CAM TABLE
+    let macCount = 2;
+    function addMacAddress() {
+      const tableBody = document.getElementById('macTableBody');
+      const countLabel = document.getElementById('macCount');
+      const statusBox = document.getElementById('macStatusBox');
+
+      if (macCount < 5) {
+        macCount++;
+        const randomMac = `0011.FAKE.${Math.floor(1000 + Math.random() * 9000)}`;
+        const tr = document.createElement('tr');
+        tr.className = "border-b border-slate-800 bg-red-950/40 text-red-300 font-bold";
+        tr.innerHTML = `
+          <td class="p-5">Fa0/3</td>
+          <td class="p-5">${randomMac} (FALSA - Ataque macof)</td>
+          <td class="p-5 text-red-400">Inundando memoria</td>
+        `;
+        tableBody.appendChild(tr);
+        countLabel.textContent = `${macCount} / 5 Registros`;
+
+        if (macCount === 5) {
+          statusBox.className = "p-5 bg-red-500/20 border border-red-500/40 rounded-2xl text-sm sm:text-base text-red-400 font-bold text-center pulse-danger";
+          statusBox.innerHTML = "🚨 ¡MEMORIA CAM SATURADA! El switch colapsó y ahora actúa como un viejo HUB, reenviando los datos confidenciales a todos los puertos. ¡Espionaje exitoso!";
+        }
+      }
+    }
+
+    // QUIZ FINAL (CON REVISIÓN DETALLADA)
+    const quizQuestions = [
+      {
+        q: "1. ¿Qué tipo de ataque satura la memoria CAM de un switch enviando miles de direcciones MAC falsas?",
+        options: ["DHCP Spoofing", "Inundación MAC (MAC Flooding)", "VLAN Hopping", "ARP Poisoning"],
+        correct: 1,
+        explanation: "La respuesta correcta es <strong>Inundación MAC (MAC Flooding)</strong> porque inunda la tabla CAM con miles de direcciones falsas hasta desbordarla.<br>• <em>¿Por qué las otras fallan?</em> El <em>DHCP Spoofing</em> suplanta servidores IP, el <em>VLAN Hopping</em> salta entre redes virtuales y el <em>ARP Poisoning</em> envenena tablas IP, ninguno satura la memoria CAM."
+      },
+      {
+        q: "2. ¿Qué estándar IEEE autentica los dispositivos en el puerto físico antes de darles acceso a la red?",
+        options: ["802.1Q", "Wi-Fi 6 (802.11ax)", "IEEE 802.1X", "STP BPDU Guard"],
+        correct: 2,
+        explanation: "La respuesta correcta es <strong>IEEE 802.1X</strong> porque bloquea el puerto físico del switch hasta que el usuario se identifica.<br>• <em>¿Por qué las otras fallan?</em> El estándar <em>802.1Q</em> añade etiquetas de VLAN, <em>Wi-Fi 6</em> es para redes inalámbricas y <em>BPDU Guard</em> protege contra manipulación del protocolo Spanning Tree."
+      },
+      {
+        q: "3. Si un atacante suplanta el servidor DHCP de la oficina para desviar el tráfico de los empleados, ¿cómo se le llama?",
+        options: ["DHCP Spoofing (Servidor Falso)", "Desbordamiento CAM", "Reconocimiento por CDP", "Control AAA"],
+        correct: 0,
+        explanation: "La respuesta correcta es <strong>DHCP Spoofing (Servidor Falso)</strong> porque monta un servidor malicioso que entrega puertas de enlace falsas a los equipos.<br>• <em>¿Por qué las otras fallan?</em> El <em>Desbordamiento CAM</em> satura memoria, el <em>CDP</em> revela topología de red y el <em>Control AAA</em> es una herramienta de seguridad defensiva, no un ataque."
+      }
+    ];
+
+    let currentQuizQ = 0;
+    let quizScore = 0;
+    let userAnswers = [];
+
+    function initQuiz() {
+      currentQuizQ = 0;
+      quizScore = 0;
+      userAnswers = [];
+      document.getElementById('quizQuestionBox').classList.remove('hidden');
+      document.getElementById('quizOptions').classList.remove('hidden');
+      document.getElementById('quizScoreBox').classList.add('hidden');
+      renderQuizQuestion();
+    }
+
+    function renderQuizQuestion() {
+      const q = quizQuestions[currentQuizQ];
+      document.getElementById('quizNum').textContent = `PREGUNTA ${currentQuizQ + 1} DE ${quizQuestions.length}`;
+      document.getElementById('quizText').textContent = q.q;
+
+      const optionsBox = document.getElementById('quizOptions');
+      optionsBox.innerHTML = '';
+
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = "p-6 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl text-left text-sm sm:text-base font-extrabold text-slate-200 transition-all shadow-xl";
+        btn.textContent = `${String.fromCharCode(65 + idx)}) ${opt}`;
+        btn.onclick = () => answerQuiz(idx);
+        optionsBox.appendChild(btn);
+      });
+    }
+
+    function answerQuiz(selectedIdx) {
+      userAnswers.push(selectedIdx);
+      if (selectedIdx === quizQuestions[currentQuizQ].correct) {
+        quizScore++;
+      }
+
+      currentQuizQ++;
+      if (currentQuizQ < quizQuestions.length) {
+        renderQuizQuestion();
+      } else {
+        renderQuizResults();
+      }
+    }
+
+    function renderQuizResults() {
+      document.getElementById('quizQuestionBox').classList.add('hidden');
+      document.getElementById('quizOptions').classList.add('hidden');
+      const scoreBox = document.getElementById('quizScoreBox');
+      scoreBox.classList.remove('hidden');
+
+      document.getElementById('quizScoreText').textContent = `El auditorio obtuvo ${quizScore} de ${quizQuestions.length} respuestas correctas.`;
+
+      const reviewContainer = document.getElementById('quizDetailedReview');
+      reviewContainer.innerHTML = '';
+
+      quizQuestions.forEach((q, idx) => {
+        const userAns = userAnswers[idx];
+        const isCorrect = userAns === q.correct;
+        const card = document.createElement('div');
+        card.className = `p-6 rounded-3xl border shadow-xl ${isCorrect ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-red-950/30 border-red-500/40'}`;
+        
+        card.innerHTML = `
+          <div class="flex items-start space-x-3">
+            <div class="text-2xl mt-0.5">${isCorrect ? '✅' : '❌'}</div>
+            <div class="space-y-2 flex-1">
+              <h5 class="font-black text-white text-base sm:text-lg">${q.q}</h5>
+              <p class="text-xs sm:text-sm text-slate-300 font-medium">
+                • Tu respuesta elegida: <span class="font-bold ${isCorrect ? 'text-emerald-400' : 'text-red-400'}">${q.options[userAns]}</span>
+                ${!isCorrect ? `<br>• La respuesta correcta era: <span class="font-bold text-emerald-400">${q.options[q.correct]}</span>` : ''}
+              </p>
+              <div class="p-3.5 bg-slate-900/90 rounded-2xl border border-slate-800 text-xs sm:text-sm text-slate-300 leading-relaxed font-medium">
+                <strong>Explicación detallada:</strong> ${q.explanation}
+              </div>
+            </div>
+          </div>
+        `;
+        reviewContainer.appendChild(card);
+      });
+    }
+
+    window.onload = initPresentation;
+  </script>
+</body>
+</html>
